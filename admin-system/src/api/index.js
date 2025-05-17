@@ -1,0 +1,13 @@
+// 导出所有API模块
+export * from './admin'
+export * from './scenic'
+export * from './hotel'
+export * from './room'
+export * from './restaurant'
+export * from './dish'
+export * from './specialty'
+export * from './ticket'
+export * from './parking'
+export * from './marketer'
+export * from './upload'
+export * from './common'
