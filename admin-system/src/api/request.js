@@ -3,7 +3,7 @@ import router from '../router'
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: 'http://localhost:8080', // 本地后端服务地址
+  baseURL: '/api',  // 修改为相对路径，通过代理转发
   timeout: 5000 // 请求超时时间
 })
 

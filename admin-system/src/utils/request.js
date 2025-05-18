@@ -8,7 +8,7 @@ import { getLocal, removeLocal } from './storage'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: 'http://localhost:8080', // 本地后端服务地址
+  baseURL: '/api', // 使用代理前缀，通过vue.config.js中的代理配置转发请求
   timeout: 10000 // 请求超时时间
 })
 
