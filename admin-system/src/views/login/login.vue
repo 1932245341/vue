@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-box">
       <el-form :model="loginForm" :rules="loginRules" label-width="80px" class="login-form">
-        <h2 class="title">旅游服务平台</h2>
+        <h2 class="title">i游阳朔后台管理平台</h2>
         
         <el-form-item label="账号" prop="username">
           <el-input v-model="loginForm.username" placeholder="请输入账号"></el-input>
