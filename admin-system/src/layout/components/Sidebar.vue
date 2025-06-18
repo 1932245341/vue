@@ -1,99 +1,201 @@
 <template>
-  <div class="sidebar-wrapper">
-    <div class="logo">
-      <img src="../../assets/logo.svg" alt="Logo">
-      <span v-if="!isCollapse">旅游服务平台</span>
+  <div class="sidebar-container">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <img src="/favicon.ico" alt="Logo" class="logo-img" />
+      <span class="logo-text">后台管理系统</span>
     </div>
+    
+    <!-- 菜单 -->
     <el-menu
-      :default-active="$route.path"
-      :collapse="isCollapse"
+      :default-active="activeMenu"
+      :collapse="isCollapsed"
+      :unique-opened="true"
+      :router="true"
       background-color="#304156"
       text-color="#bfcbd9"
-      active-text-color="#409EFF"
-      unique-opened
-      router
+      active-text-color="#ffffff"
+      class="sidebar-menu"
     >
-      <el-menu-item index="/dashboard">
-        <i class="el-icon-house"></i>
-        <span>控制台</span>
-      </el-menu-item>
-      
-      <!-- 系统管理模块 - 仅管理员可见 -->
-      <el-sub-menu v-if="role === 'admin'" index="admin">
-        <template #title>
-          <i class="el-icon-user"></i>
-          <span>系统管理</span>
-        </template>
-        <el-menu-item index="/marketer">商户管理</el-menu-item>
-      </el-sub-menu>
-      
-      <el-sub-menu index="scenic">
-        <template #title>
-          <i class="el-icon-location"></i>
-          <span>景点管理</span>
-        </template>
-        <el-menu-item index="/scenic">景点列表</el-menu-item>
-        <el-menu-item index="/ticket">门票管理</el-menu-item>
-        <el-menu-item v-if="role === 'admin' || marketerStatus === 1" index="/specialty">特产管理</el-menu-item>
-        <el-menu-item v-if="role === 'admin' || marketerStatus === 1" index="/parking">停车场管理</el-menu-item>
-      </el-sub-menu>
-      
-      <el-sub-menu index="hotel">
-        <template #title>
-          <i class="el-icon-office-building"></i>
-          <span>酒店管理</span>
-        </template>
-        <el-menu-item v-if="role === 'admin'" index="/hotel">酒店列表</el-menu-item>
-        <el-menu-item v-if="role === 'admin' || marketerStatus === 1" index="/room">房间管理</el-menu-item>
-      </el-sub-menu>
-      
-      <el-sub-menu index="restaurant">
-        <template #title>
-          <i class="el-icon-food"></i>
-          <span>餐厅管理</span>
-        </template>
-        <el-menu-item v-if="role === 'admin'" index="/restaurant">餐厅列表</el-menu-item>
-        <el-menu-item v-if="role === 'admin' || marketerStatus === 1" index="/dish">菜品管理</el-menu-item>
-      </el-sub-menu>
+      <template v-for="route in menuRoutes" :key="route.path">
+        <!-- 单级菜单 -->
+        <el-menu-item
+          v-if="!route.children || route.children.length === 1"
+          :index="route.children ? getFullPath(route.path, route.children[0].path) : route.path"
+          @click="handleMenuClick(route.children ? route.children[0] : route, route.path)"
+        >
+          <el-icon><component :is="route.meta?.icon || 'Menu'" /></el-icon>
+          <template #title>
+            {{ route.children ? route.children[0].meta?.title : route.meta?.title }}
+          </template>
+        </el-menu-item>
+        
+        <!-- 多级菜单 -->
+        <el-sub-menu v-else :index="route.path">
+          <template #title>
+            <el-icon><component :is="route.meta?.icon || 'Menu'" /></el-icon>
+            <span>{{ route.meta?.title }}</span>
+          </template>
+          
+          <el-menu-item
+            v-for="child in route.children"
+            :key="child.path"
+            :index="getFullPath(route.path, child.path)"
+            @click="handleMenuClick(child, route.path)"
+          >
+            <el-icon><component :is="child.meta?.icon || 'Menu'" /></el-icon>
+            <template #title>{{ child.meta?.title }}</template>
+          </el-menu-item>
+        </el-sub-menu>
+      </template>
     </el-menu>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useUserStore } from '@/store/index';
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
-const store = useUserStore()
+const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
 
-const role = computed(() => store.role)
-const marketerStatus = computed(() => store.marketerStatus)
+// 计算当前激活的菜单
+const activeMenu = computed(() => {
+  return route.path
+})
 
-const isCollapse = ref(false)
+// 从路由配置中过滤出菜单项
+const menuRoutes = computed(() => {
+  const userRole = userStore.getUserRole()
+  
+  return router.options.routes.filter(route => {
+    // 排除登录页、404页面和通配符路由
+    if (route.path === '/login' || route.path === '/404' || route.path.includes('*')) {
+      return false
+    }
+    
+    // 排除原始的dashboard路由
+    if (route.path === '/') {
+      return false
+    }
+    
+    // 如果路由有角色限制，检查用户角色
+    if (route.meta?.role) {
+      return route.meta.role === userRole
+    }
+    
+    // 检查子路由是否有角色限制
+    if (route.children && route.children.length > 0) {
+      // 如果所有子路由都有角色限制且不匹配当前用户角色，则不显示该路由
+      const hasMatchingChild = route.children.some(child => {
+        if (child.meta?.role) {
+          return child.meta.role === userRole
+        }
+        return true // 没有角色限制的子路由
+      })
+      return hasMatchingChild
+    }
+    
+    // 没有角色限制的路由只有在用户有角色时才显示
+    return userRole !== ''
+  })
+})
+
+// 获取完整路径
+const getFullPath = (parentPath, childPath) => {
+  if (childPath.startsWith('/')) {
+    return childPath
+  }
+  // 处理根路径的特殊情况
+  if (parentPath === '/') {
+    return '/' + childPath
+  }
+  return parentPath + '/' + childPath
+}
+
+// 处理菜单点击
+const handleMenuClick = (menuItem, parentPath = '') => {
+  let fullPath = menuItem.path
+  
+  // 如果是子路由且路径不是以/开头，需要拼接父路径
+  if (parentPath && !menuItem.path.startsWith('/')) {
+    // 处理根路径的特殊情况
+    if (parentPath === '/') {
+      fullPath = '/' + menuItem.path
+    } else {
+      fullPath = parentPath + '/' + menuItem.path
+    }
+  }
+  
+  if (fullPath && fullPath !== route.path) {
+    router.push(fullPath)
+  }
+}
+
+// 是否折叠（从父组件传入）
+defineProps({
+  isCollapsed: {
+    type: Boolean,
+    default: false
+  }
+})
 </script>
 
 <style scoped>
-.sidebar-wrapper {
-  width: 210px;
-  background-color: #304156;
-  height: 100vh;
-  overflow-y: auto;
+.sidebar-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.logo {
+.sidebar-logo {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 50px;
-  background-color: #2b2f3a;
+  padding: 20px;
+  background-color: #2b3a4b;
   color: #fff;
-  font-size: 18px;
-  overflow: hidden;
-  white-space: nowrap;
 }
 
-.logo img {
+.logo-img {
   width: 32px;
   height: 32px;
   margin-right: 10px;
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.sidebar-menu {
+  flex: 1;
+  border: none;
+}
+
+.sidebar-menu:not(.el-menu--collapse) {
+  width: 250px;
+}
+
+:deep(.el-menu-item),
+:deep(.el-sub-menu__title) {
+  height: 50px;
+  line-height: 50px;
+}
+
+:deep(.el-menu-item:hover),
+:deep(.el-sub-menu__title:hover) {
+  background-color: #263445 !important;
+}
+
+:deep(.el-menu-item.is-active) {
+  background-color: #409EFF !important;
+  color: #ffffff !important;
+}
+
+:deep(.el-menu-item.is-active .el-icon) {
+  color: #ffffff !important;
 }
 </style>
