@@ -38,40 +38,15 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="产地" prop="origin">
-            <el-input
-              v-model="form.origin"
-              placeholder="请输入产地"
-              maxlength="30"
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="分类" prop="category">
+          <el-form-item label="类型" prop="type">
             <el-select
-              v-model="form.category"
-              placeholder="请选择分类"
+              v-model="form.type"
+              placeholder="请选择类型"
               style="width: 100%"
             >
-              <el-option label="茶叶" value="茶叶" />
-              <el-option label="熟食" value="熟食" />
-              <el-option label="调料" value="调料" />
-              <el-option label="糕点" value="糕点" />
-              <el-option label="干果" value="干果" />
               <el-option label="工艺品" value="工艺品" />
-              <el-option label="其他" value="其他" />
+              <el-option label="食品" value="食品" />
             </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="状态" prop="status">
-            <el-radio-group v-model="form.status">
-              <el-radio :label="1">上架</el-radio>
-              <el-radio :label="0">下架</el-radio>
-            </el-radio-group>
           </el-form-item>
         </el-col>
       </el-row>
@@ -96,19 +71,20 @@
           <el-form-item label="特产图片">
             <el-upload
               class="upload-demo"
-              :action="uploadUrl"
+              :action="uploadAction"
               :headers="uploadHeaders"
               :on-success="handleUploadSuccess"
               :on-error="handleUploadError"
               :before-upload="beforeUpload"
+              :on-remove="handleRemove"
               :file-list="fileList"
               list-type="picture-card"
-              :limit="3"
+              :limit="1"
             >
               <el-icon><Plus /></el-icon>
               <template #tip>
                 <div class="el-upload__tip">
-                  支持jpg/png文件，且不超过2MB，最多上传3张
+                  支持jpg/png文件，且不超过2MB
                 </div>
               </template>
             </el-upload>
@@ -164,16 +140,14 @@ const form = reactive({
   name: '',
   description: '',
   price: null,
-  origin: '',
-  category: '',
-  status: 1,
-  images: []
+  type: '工艺品',
+  image: ''
 })
 
 // 上传配置
-const uploadUrl = computed(() => '/api/common/file/upload')
+const uploadAction = 'http://localhost:8080/common/file/upload'
 const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('admin_token')
+  const token = localStorage.getItem('userToken')
   return token ? { token } : {}
 })
 
@@ -187,12 +161,8 @@ const rules = {
     { required: true, message: '请输入价格', trigger: 'blur' },
     { type: 'number', min: 0, message: '价格必须大于等于0', trigger: 'blur' }
   ],
-  origin: [
-    { required: true, message: '请输入产地', trigger: 'blur' },
-    { max: 30, message: '产地长度不能超过30个字符', trigger: 'blur' }
-  ],
-  category: [
-    { required: true, message: '请选择分类', trigger: 'change' }
+  type: [
+    { required: true, message: '请选择类型', trigger: 'change' }
   ],
   description: [
     { required: true, message: '请输入描述', trigger: 'blur' },
@@ -250,10 +220,8 @@ const resetForm = () => {
     name: '',
     description: '',
     price: null,
-    origin: '',
-    category: '',
-    status: 1,
-    images: []
+    type: '工艺品',
+    image: ''
   })
   fileList.value = []
 }
@@ -276,12 +244,17 @@ const beforeUpload = (file) => {
 
 // 文件上传成功
 const handleUploadSuccess = (response) => {
-  if (response.code === 1) {
-    form.images.push(response.data)
+  if (response.code === 1 || response.data) {
+    form.image = response.data
     ElMessage.success('图片上传成功')
   } else {
     ElMessage.error(response.msg || '图片上传失败')
   }
+}
+
+// 移除图片
+const handleRemove = () => {
+  form.image = ''
 }
 
 // 文件上传失败
@@ -304,8 +277,7 @@ const handleSubmit = async () => {
     submitLoading.value = true
     
     const submitData = {
-      ...form,
-      images: form.images.length > 0 ? form.images : undefined
+      ...form
     }
     
     let response

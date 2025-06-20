@@ -15,91 +15,38 @@
         label-width="120px"
         class="hotel-form-content"
       >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="酒店名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入酒店名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="营销人员ID" prop="marketerId">
-              <el-input-number v-model="form.marketerId" placeholder="请输入营销人员ID" :min="1" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="酒店名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入酒店名称" />
+        </el-form-item>
 
-        <el-form-item label="酒店地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入酒店地址" />
+        <el-form-item label="位置" prop="location">
+          <el-input v-model="form.location" placeholder="请输入位置" />
         </el-form-item>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="联系电话" prop="phone">
-              <el-input v-model="form.phone" placeholder="请输入联系电话" />
+            <el-form-item label="纬度" prop="latitude">
+              <el-input v-model="form.latitude" placeholder="请输入纬度" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="最低价格" prop="minPrice">
-              <el-input-number
-                v-model="form.minPrice"
-                placeholder="请输入最低价格"
-                :min="0"
-                :precision="2"
-                style="width: 100%"
-              />
+            <el-form-item label="经度" prop="longitude">
+              <el-input v-model="form.longitude" placeholder="请输入经度" />
             </el-form-item>
           </el-col>
         </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="房间数量" prop="roomnum">
-              <el-input-number v-model="form.roomnum" placeholder="请输入房间数量" :min="1" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="评分" prop="rating">
-              <el-rate v-model="form.rating" show-score allow-half />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="入住时间" prop="checkinTime">
-              <el-input v-model="form.checkinTime" placeholder="例如：14:00" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="退房时间" prop="checkoutTime">
-              <el-input v-model="form.checkoutTime" placeholder="例如：12:00" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="酒店设施" prop="facilities">
-          <el-input v-model="form.facilities" placeholder="请输入酒店设施，用逗号分隔" />
-        </el-form-item>
-
-        <el-form-item label="酒店描述" prop="description">
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入酒店描述"
-          />
-        </el-form-item>
 
         <el-form-item label="酒店图片">
           <el-upload
             class="upload-demo"
-            :action="uploadUrl"
+            :action="uploadAction"
             :headers="uploadHeaders"
+            :before-upload="beforeUpload"
             :on-success="handleUploadSuccess"
-            :on-error="handleUploadError"
+            :on-remove="handleRemove"
             :file-list="fileList"
             list-type="picture-card"
-            :limit="5"
+            :limit="1"
           >
             <el-icon><Plus /></el-icon>
           </el-upload>
@@ -137,17 +84,10 @@ const fileList = ref([])
 
 const form = reactive({
   name: '',
-  marketerId: null,
-  address: '',
-  phone: '',
-  minPrice: null,
-  roomnum: null,
-  rating: 0,
-  checkinTime: '',
-  checkoutTime: '',
-  facilities: '',
-  description: '',
-  images: []
+  location: '',
+  latitude: '',
+  longitude: '',
+  image: ''
 })
 
 // 表单验证规则
@@ -156,58 +96,51 @@ const rules = {
     { required: true, message: '请输入酒店名称', trigger: 'blur' },
     { min: 2, max: 50, message: '酒店名称长度在 2 到 50 个字符', trigger: 'blur' }
   ],
-  marketerId: [
-    { required: true, message: '请输入营销人员ID', trigger: 'blur' }
+  location: [
+    { required: true, message: '请输入位置', trigger: 'blur' },
+    { max: 200, message: '位置长度不能超过 200 个字符', trigger: 'blur' }
   ],
-  address: [
-    { required: true, message: '请输入酒店地址', trigger: 'blur' },
-    { max: 200, message: '地址长度不能超过 200 个字符', trigger: 'blur' }
+  latitude: [
+    { required: true, message: '请输入纬度', trigger: 'blur' }
   ],
-  phone: [
-    { required: true, message: '请输入联系电话', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
-  ],
-  minPrice: [
-    { required: true, message: '请输入最低价格', trigger: 'blur' },
-    { type: 'number', min: 0, message: '最低价格不能小于0', trigger: 'blur' }
-  ],
-  roomnum: [
-    { required: true, message: '请输入房间数量', trigger: 'blur' },
-    { type: 'number', min: 1, message: '房间数量不能小于1', trigger: 'blur' }
-  ],
-  checkinTime: [
-    { required: true, message: '请输入入住时间', trigger: 'blur' }
-  ],
-  checkoutTime: [
-    { required: true, message: '请输入退房时间', trigger: 'blur' }
-  ],
-  description: [
-    { max: 500, message: '描述长度不能超过 500 个字符', trigger: 'blur' }
+  longitude: [
+    { required: true, message: '请输入经度', trigger: 'blur' }
   ]
 }
 
 // 上传配置
-const uploadUrl = computed(() => '/api/common/file/upload')
-const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('admin_token')
-  return {
-    'Authorization': `Bearer ${token}`
-  }
+const uploadAction = ref('http://localhost:8080/common/file/upload')
+const uploadHeaders = ref({
+  'token': localStorage.getItem('userToken')
 })
 
+// 上传前检查
+const beforeUpload = (file) => {
+  const isJPG = file.type === 'image/jpeg' || file.type === 'image/png'
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isJPG) {
+    ElMessage.error('只能上传 JPG/PNG 格式的图片!')
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB!')
+  }
+  return isJPG && isLt2M
+}
+
 // 上传成功回调
-const handleUploadSuccess = (response) => {
-  if (response.code === 1) {
-    form.images.push(response.data)
+const handleUploadSuccess = (response, file) => {
+  if (response.code === 200) {
+    form.image = response.data.url || response.data
     ElMessage.success('图片上传成功')
   } else {
-    ElMessage.error(response.msg || '图片上传失败')
+    ElMessage.error('图片上传失败')
   }
 }
 
-// 上传失败回调
-const handleUploadError = () => {
-  ElMessage.error('图片上传失败')
+// 移除图片
+const handleRemove = (file) => {
+  form.image = ''
 }
 
 // 提交表单
@@ -249,7 +182,7 @@ const handleReset = () => {
     formRef.value.resetFields()
   }
   fileList.value = []
-  form.images = []
+  form.image = ''
 }
 
 // 返回列表

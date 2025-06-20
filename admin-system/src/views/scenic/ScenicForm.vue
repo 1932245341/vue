@@ -41,36 +41,9 @@
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="门票价格" prop="price">
-              <el-input-number
-                v-model="formData.price"
-                :min="0"
-                :max="9999"
-                :precision="2"
-                placeholder="请输入门票价格"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          
-          <el-col :span="12">
-            <el-form-item label="评分" prop="rating">
-              <el-rate
-                v-model="formData.rating"
-                :max="5"
-                show-score
-                allow-half
-                score-template="{value} 分"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="开放时间" prop="openTime">
+            <el-form-item label="开放时间" prop="time">
               <el-input
-                v-model="formData.openTime"
+                v-model="formData.time"
                 placeholder="例如：08:00-18:00"
                 maxlength="20"
               />
@@ -78,17 +51,51 @@
           </el-col>
           
           <el-col :span="12">
-            <el-form-item label="联系电话" prop="phone">
+            <el-form-item label="联系人" prop="contact">
               <el-input
-                v-model="formData.phone"
-                placeholder="请输入联系电话"
+                v-model="formData.contact"
+                placeholder="请输入联系人"
                 maxlength="20"
               />
             </el-form-item>
           </el-col>
         </el-row>
         
-        <el-form-item label="景点图片" prop="images">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="纬度" prop="latitude">
+              <el-input
+                v-model="formData.latitude"
+                placeholder="请输入纬度"
+                maxlength="20"
+              />
+            </el-form-item>
+          </el-col>
+          
+          <el-col :span="12">
+            <el-form-item label="经度" prop="longitude">
+              <el-input
+                v-model="formData.longitude"
+                placeholder="请输入经度"
+                maxlength="20"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="标签" prop="label">
+              <el-input
+                v-model="formData.label"
+                placeholder="请输入标签"
+                maxlength="50"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-form-item label="景点图片" prop="image">
           <div class="image-upload-container">
             <el-upload
               v-model:file-list="fileList"
@@ -98,44 +105,17 @@
               :on-remove="handleRemove"
               :before-upload="beforeUpload"
               list-type="picture-card"
-              :limit="5"
+              :limit="1"
             >
               <el-icon><Plus /></el-icon>
             </el-upload>
             <div class="upload-tip">
-              支持 jpg、png 格式，单张图片不超过 2MB，最多上传 5 张
+              支持 jpg、png 格式，单张图片不超过 2MB
             </div>
           </div>
         </el-form-item>
         
-        <el-form-item label="景点描述" prop="description">
-          <el-input
-            v-model="formData.description"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入景点描述"
-            maxlength="500"
-            show-word-limit
-          />
-        </el-form-item>
-        
-        <el-form-item label="详细介绍" prop="content">
-          <el-input
-            v-model="formData.content"
-            type="textarea"
-            :rows="6"
-            placeholder="请输入详细介绍"
-            maxlength="2000"
-            show-word-limit
-          />
-        </el-form-item>
-        
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="formData.status">
-            <el-radio :label="1">启用</el-radio>
-            <el-radio :label="0">禁用</el-radio>
-          </el-radio-group>
-        </el-form-item>
+
         
         <el-form-item>
           <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
@@ -174,23 +154,21 @@ const isEdit = computed(() => {
 const fileList = ref([])
 
 // 上传配置
-const uploadAction = ref('/api/common/file/upload')
+const uploadAction = ref('http://localhost:8080/common/file/upload')
 const uploadHeaders = ref({
-  'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+  'token': localStorage.getItem('userToken')
 })
 
 // 表单数据
 const formData = reactive({
   name: '',
   location: '',
-  price: 0,
-  rating: 0,
-  openTime: '',
-  phone: '',
-  images: [],
-  description: '',
-  content: '',
-  status: 1
+  time: '',
+  latitude: '',
+  longitude: '',
+  contact: '',
+  label: '',
+  image: ''
 })
 
 // 表单验证规则
@@ -203,21 +181,20 @@ const formRules = {
     { required: true, message: '请输入景点位置', trigger: 'blur' },
     { max: 100, message: '位置长度不能超过 100 个字符', trigger: 'blur' }
   ],
-  price: [
-    { required: true, message: '请输入门票价格', trigger: 'blur' },
-    { type: 'number', min: 0, message: '价格不能小于 0', trigger: 'blur' }
+  time: [
+    { required: true, message: '请输入开放时间', trigger: 'blur' }
   ],
-  rating: [
-    { type: 'number', min: 0, max: 5, message: '评分范围为 0-5', trigger: 'blur' }
+  latitude: [
+    { required: true, message: '请输入纬度', trigger: 'blur' }
   ],
-  phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+  longitude: [
+    { required: true, message: '请输入经度', trigger: 'blur' }
   ],
-  description: [
-    { max: 500, message: '描述长度不能超过 500 个字符', trigger: 'blur' }
+  contact: [
+    { required: true, message: '请输入联系人', trigger: 'blur' }
   ],
-  content: [
-    { max: 2000, message: '详细介绍长度不能超过 2000 个字符', trigger: 'blur' }
+  label: [
+    { max: 50, message: '标签长度不能超过 50 个字符', trigger: 'blur' }
   ]
 }
 
@@ -235,14 +212,14 @@ const loadScenicDetail = async () => {
       }
     })
     
-    // 处理图片列表
-    if (data.images && Array.isArray(data.images)) {
-      fileList.value = data.images.map((url, index) => ({
-        uid: index,
-        name: `image-${index}`,
+    // 处理图片
+    if (data.image) {
+      fileList.value = [{
+        uid: 1,
+        name: 'image',
         status: 'done',
-        url: url
-      }))
+        url: data.image
+      }]
     }
   } catch (error) {
     console.error('加载景点详情失败:', error)
@@ -253,7 +230,7 @@ const loadScenicDetail = async () => {
 // 上传成功回调
 const handleUploadSuccess = (response, file) => {
   if (response.code === 200) {
-    formData.images.push(response.data.url)
+    formData.image = response.data.url || response.data
     ElMessage.success('图片上传成功')
   } else {
     ElMessage.error('图片上传失败')
@@ -262,10 +239,7 @@ const handleUploadSuccess = (response, file) => {
 
 // 移除图片
 const handleRemove = (file) => {
-  const index = fileList.value.findIndex(item => item.uid === file.uid)
-  if (index > -1) {
-    formData.images.splice(index, 1)
-  }
+  formData.image = ''
 }
 
 // 上传前检查
@@ -321,7 +295,7 @@ const handleReset = () => {
     formRef.value.resetFields()
   }
   fileList.value = []
-  formData.images = []
+  formData.image = ''
 }
 
 // 返回列表

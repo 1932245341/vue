@@ -42,33 +42,21 @@
       >
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="停车场名称" min-width="150" />
-        <el-table-column prop="address" label="地址" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="totalSpaces" label="总车位" width="100">
+        <el-table-column prop="image" label="图片" width="100">
           <template #default="{ row }">
-            <span style="color: #409eff; font-weight: bold;">{{ row.totalSpaces }}</span>
+            <el-image
+              v-if="row.image"
+              :src="row.image"
+              style="width: 60px; height: 40px;"
+              fit="cover"
+              :preview-src-list="[row.image]"
+            />
+            <span v-else>暂无图片</span>
           </template>
         </el-table-column>
-        <el-table-column prop="availableSpaces" label="可用车位" width="100">
-          <template #default="{ row }">
-            <span :style="{ color: row.availableSpaces > 0 ? '#67c23a' : '#f56c6c', fontWeight: 'bold' }">
-              {{ row.availableSpaces }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="hourlyRate" label="小时费率" width="100">
-          <template #default="{ row }">
-            <span style="color: #f56c6c; font-weight: bold;">¥{{ row.hourlyRate }}/h</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="operatingHours" label="营业时间" width="150" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '营业中' : '暂停营业' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="location" label="位置" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="latitude" label="纬度" width="120" />
+        <el-table-column prop="longitude" label="经度" width="120" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button

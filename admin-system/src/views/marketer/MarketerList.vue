@@ -10,26 +10,10 @@
 
       <!-- 搜索表单 -->
       <el-form :model="searchForm" :inline="true" class="search-form">
-        <el-form-item label="用户名">
-          <el-input
-            v-model="searchForm.username"
-            placeholder="请输入用户名"
-            clearable
-            style="width: 200px"
-          />
-        </el-form-item>
-        <el-form-item label="姓名">
+        <el-form-item label="商家昵称">
           <el-input
             v-model="searchForm.name"
-            placeholder="请输入姓名"
-            clearable
-            style="width: 200px"
-          />
-        </el-form-item>
-        <el-form-item label="手机号">
-          <el-input
-            v-model="searchForm.phone"
-            placeholder="请输入手机号"
+            placeholder="请输入商家昵称"
             clearable
             style="width: 200px"
           />
@@ -49,19 +33,22 @@
         border
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="username" label="用户名" min-width="120" />
-        <el-table-column prop="name" label="姓名" min-width="100" />
-        <el-table-column prop="phone" label="手机号" width="130" />
-        <el-table-column prop="email" label="邮箱" min-width="150" />
-        <el-table-column prop="department" label="部门" width="120" />
-        <el-table-column prop="position" label="职位" width="120" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="name" label="商家昵称" min-width="120" />
+        <el-table-column label="营业执照" width="120">
           <template #default="{ row }">
-            <el-tag :type="getStatusTagType(row.status)">{{ row.status }}</el-tag>
+            <el-image
+              v-if="row.license"
+              :src="row.license"
+              :preview-src-list="[row.license]"
+              style="width: 60px; height: 60px;"
+              fit="cover"
+            />
+            <span v-else>暂无图片</span>
           </template>
         </el-table-column>
-        <el-table-column prop="lastLoginTime" label="最后登录时间" width="180" />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="phone" label="电话" width="130" />
+        <el-table-column prop="manager" label="经办人" width="120" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button
@@ -115,9 +102,7 @@ const tableData = ref([])
 
 // 搜索表单
 const searchForm = reactive({
-  username: '',
-  name: '',
-  phone: ''
+  name: ''
 })
 
 // 分页数据

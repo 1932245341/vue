@@ -11,17 +11,7 @@
             style="width: 200px"
           />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select
-            v-model="searchForm.status"
-            placeholder="请选择状态"
-            clearable
-            style="width: 120px"
-          >
-            <el-option label="启用" value="1" />
-            <el-option label="禁用" value="0" />
-          </el-select>
-        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" @click="handleSearch">
             <el-icon><Search /></el-icon>
@@ -76,33 +66,36 @@
         
         <el-table-column prop="name" label="景点名称" min-width="150" />
         
+        <el-table-column label="图片" width="100">
+          <template #default="{ row }">
+            <el-image
+              v-if="row.image"
+              :src="row.image"
+              :preview-src-list="[row.image]"
+              fit="cover"
+              style="width: 60px; height: 60px; border-radius: 4px;"
+            />
+            <span v-else>暂无图片</span>
+          </template>
+        </el-table-column>
+        
         <el-table-column prop="location" label="位置" min-width="120" />
         
-        <el-table-column prop="price" label="门票价格" width="100">
+        <el-table-column prop="latitude" label="纬度" width="100" />
+        
+        <el-table-column prop="longitude" label="经度" width="100" />
+        
+        <el-table-column prop="contact" label="联系人" width="120" />
+        
+        <el-table-column prop="score" label="评分" width="80">
           <template #default="{ row }">
-            <span class="price">¥{{ row.price }}</span>
+            <span>{{ row.score }}</span>
           </template>
         </el-table-column>
         
-        <el-table-column prop="rating" label="评分" width="80">
-          <template #default="{ row }">
-            <el-rate
-              v-model="row.rating"
-              disabled
-              show-score
-              text-color="#ff9900"
-              score-template="{value}"
-            />
-          </template>
-        </el-table-column>
+        <el-table-column prop="label" label="标签" width="100" />
         
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
+        <el-table-column prop="sale" label="销量" width="80" />
         
         <el-table-column prop="createTime" label="创建时间" width="180">
           <template #default="{ row }">
@@ -154,8 +147,7 @@ const loading = ref(false)
 
 // 搜索表单
 const searchForm = reactive({
-  name: '',
-  status: ''
+  name: ''
 })
 
 // 表格数据

@@ -41,23 +41,27 @@
         row-key="id"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="特产名称" min-width="150" />
-        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="name" label="名称" min-width="150" />
+        <el-table-column label="图片" width="120">
+          <template #default="{ row }">
+            <el-image
+              v-if="row.image"
+              :src="row.image"
+              :preview-src-list="[row.image]"
+              style="width: 60px; height: 60px;"
+              fit="cover"
+            />
+            <span v-else>暂无图片</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="price" label="价格" width="100">
           <template #default="{ row }">
             <span style="color: #f56c6c; font-weight: bold;">¥{{ row.price }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="origin" label="产地" width="120" />
-        <el-table-column prop="category" label="分类" width="100" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '上架' : '下架' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="sale" label="销售量" width="100" />
+        <el-table-column prop="type" label="类型" width="100" />
+        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button

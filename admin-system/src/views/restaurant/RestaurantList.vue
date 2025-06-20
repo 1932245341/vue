@@ -6,8 +6,8 @@
         <el-form-item label="餐厅名称">
           <el-input v-model="searchForm.name" placeholder="请输入餐厅名称" clearable />
         </el-form-item>
-        <el-form-item label="地址">
-          <el-input v-model="searchForm.address" placeholder="请输入地址" clearable />
+        <el-form-item label="位置">
+          <el-input v-model="searchForm.location" placeholder="请输入位置" clearable />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
@@ -22,20 +22,27 @@
       <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="餐厅名称" min-width="150" />
-        <el-table-column prop="address" label="地址" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="phone" label="联系电话" width="150" />
-        <el-table-column prop="marketerId" label="营销人员ID" width="120" />
-        <el-table-column prop="avgPrice" label="人均消费" width="100">
+        <el-table-column label="图片" width="100">
           <template #default="{ row }">
-            <span class="price">¥{{ row.avgPrice }}</span>
+            <el-image
+              v-if="row.image"
+              :src="row.image"
+              :preview-src-list="[row.image]"
+              fit="cover"
+              style="width: 60px; height: 60px; border-radius: 4px;"
+            />
+            <span v-else>暂无图片</span>
           </template>
         </el-table-column>
-        <el-table-column prop="rating" label="评分" width="100">
+        <el-table-column prop="location" label="位置" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="latitude" label="纬度" width="120" />
+        <el-table-column prop="longitude" label="经度" width="120" />
+        <el-table-column prop="score" label="评分" width="100">
           <template #default="{ row }">
-            <el-rate v-model="row.rating" disabled show-score text-color="#ff9900" />
+            <el-rate v-model="row.score" disabled show-score text-color="#ff9900" />
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="sales" label="销售量" width="100" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)" :icon="Edit">编辑</el-button>
@@ -73,7 +80,7 @@ const loading = ref(false)
 const tableData = ref([])
 const searchForm = reactive({
   name: '',
-  address: ''
+  location: ''
 })
 const pagination = reactive({
   page: 1,

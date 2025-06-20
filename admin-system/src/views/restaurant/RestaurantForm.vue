@@ -15,74 +15,49 @@
         label-width="120px"
         class="restaurant-form-content"
       >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="餐厅名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入餐厅名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="营销人员ID" prop="marketerId">
-              <el-input-number v-model="form.marketerId" placeholder="请输入营销人员ID" :min="1" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="餐厅名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入餐厅名称" />
+        </el-form-item>
 
-        <el-form-item label="餐厅地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入餐厅地址" />
+        <el-form-item label="餐厅位置" prop="location">
+          <el-input v-model="form.location" placeholder="请输入餐厅位置" />
         </el-form-item>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="联系电话" prop="phone">
-              <el-input v-model="form.phone" placeholder="请输入联系电话" />
+            <el-form-item label="纬度" prop="latitude">
+              <el-input-number
+                v-model="form.latitude"
+                placeholder="请输入纬度"
+                :precision="6"
+                style="width: 100%"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="人均消费" prop="avgPrice">
+            <el-form-item label="经度" prop="longitude">
               <el-input-number
-                v-model="form.avgPrice"
-                placeholder="请输入人均消费"
-                :min="0"
-                :precision="2"
+                v-model="form.longitude"
+                placeholder="请输入经度"
+                :precision="6"
                 style="width: 100%"
               />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="营业时间" prop="businessHours">
-              <el-input v-model="form.businessHours" placeholder="例如：09:00-22:00" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="评分" prop="rating">
-              <el-rate v-model="form.rating" show-score allow-half />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="餐厅描述" prop="description">
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入餐厅描述"
-          />
-        </el-form-item>
-
         <el-form-item label="餐厅图片">
           <el-upload
             class="upload-demo"
-            :action="uploadUrl"
+            :action="uploadAction"
             :headers="uploadHeaders"
             :on-success="handleUploadSuccess"
             :on-error="handleUploadError"
+            :before-upload="beforeUpload"
+            :on-remove="handleRemove"
             :file-list="fileList"
             list-type="picture-card"
-            :limit="3"
+            :limit="1"
           >
             <el-icon><Plus /></el-icon>
           </el-upload>
@@ -120,14 +95,10 @@ const fileList = ref([])
 
 const form = reactive({
   name: '',
-  marketerId: null,
-  address: '',
-  phone: '',
-  avgPrice: null,
-  businessHours: '',
-  rating: 0,
-  description: '',
-  images: []
+  location: '',
+  latitude: null,
+  longitude: null,
+  image: ''
 })
 
 // 表单验证规则
@@ -136,42 +107,49 @@ const rules = {
     { required: true, message: '请输入餐厅名称', trigger: 'blur' },
     { min: 2, max: 50, message: '餐厅名称长度在 2 到 50 个字符', trigger: 'blur' }
   ],
-  marketerId: [
-    { required: true, message: '请输入营销人员ID', trigger: 'blur' }
+  location: [
+    { required: true, message: '请输入餐厅位置', trigger: 'blur' },
+    { max: 200, message: '位置长度不能超过 200 个字符', trigger: 'blur' }
   ],
-  address: [
-    { required: true, message: '请输入餐厅地址', trigger: 'blur' },
-    { max: 200, message: '地址长度不能超过 200 个字符', trigger: 'blur' }
+  latitude: [
+    { required: true, message: '请输入纬度', trigger: 'blur' },
+    { type: 'number', message: '纬度必须为数字', trigger: 'blur' }
   ],
-  phone: [
-    { required: true, message: '请输入联系电话', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
-  ],
-  avgPrice: [
-    { required: true, message: '请输入人均消费', trigger: 'blur' },
-    { type: 'number', min: 0, message: '人均消费不能小于0', trigger: 'blur' }
-  ],
-  businessHours: [
-    { required: true, message: '请输入营业时间', trigger: 'blur' }
-  ],
-  description: [
-    { max: 500, message: '描述长度不能超过 500 个字符', trigger: 'blur' }
+  longitude: [
+    { required: true, message: '请输入经度', trigger: 'blur' },
+    { type: 'number', message: '经度必须为数字', trigger: 'blur' }
   ]
 }
 
 // 上传配置
-const uploadUrl = computed(() => '/api/common/file/upload')
+const uploadAction = 'http://localhost:8080/common/file/upload'
 const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('admin_token')
+  const userToken = localStorage.getItem('userToken')
   return {
-    'Authorization': `Bearer ${token}`
+    'token': userToken
   }
 })
+
+// 文件上传前验证
+const beforeUpload = (file) => {
+  const isJPGOrPNG = file.type === 'image/jpeg' || file.type === 'image/png'
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isJPGOrPNG) {
+    ElMessage.error('只能上传 JPG/PNG 格式的图片!')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB!')
+    return false
+  }
+  return true
+}
 
 // 上传成功回调
 const handleUploadSuccess = (response) => {
   if (response.code === 1) {
-    form.images.push(response.data)
+    form.image = response.data
     ElMessage.success('图片上传成功')
   } else {
     ElMessage.error(response.msg || '图片上传失败')
@@ -181,6 +159,11 @@ const handleUploadSuccess = (response) => {
 // 上传失败回调
 const handleUploadError = () => {
   ElMessage.error('图片上传失败')
+}
+
+// 移除图片
+const handleRemove = () => {
+  form.image = ''
 }
 
 // 提交表单
@@ -222,7 +205,7 @@ const handleReset = () => {
     formRef.value.resetFields()
   }
   fileList.value = []
-  form.images = []
+  form.image = ''
 }
 
 // 返回列表
