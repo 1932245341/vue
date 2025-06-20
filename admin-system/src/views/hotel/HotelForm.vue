@@ -23,15 +23,26 @@
           <el-input v-model="form.location" placeholder="请输入位置" />
         </el-form-item>
 
+        <el-form-item label="位置选择">
+          <div class="location-selector">
+            <el-button type="primary" :icon="Location" @click="showMapDialog = true">
+              位置选择
+            </el-button>
+            <span v-if="form.longitude && form.latitude" class="location-info">
+              经度: {{ form.longitude }}, 纬度: {{ form.latitude }}
+            </span>
+          </div>
+        </el-form-item>
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="纬度" prop="latitude">
-              <el-input v-model="form.latitude" placeholder="请输入纬度" />
+              <el-input v-model="form.latitude" placeholder="请输入纬度" readonly />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="经度" prop="longitude">
-              <el-input v-model="form.longitude" placeholder="请输入经度" />
+              <el-input v-model="form.longitude" placeholder="请输入经度" readonly />
             </el-form-item>
           </el-col>
         </el-row>
@@ -61,15 +72,54 @@
         </el-form-item>
       </el-form>
     </el-card>
+
+    <!-- 地图选择对话框 -->
+    <el-dialog
+      v-model="showMapDialog"
+      title="选择酒店位置"
+      width="80%"
+      @close="handleMapClose"
+    >
+      <div class="map-search">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索地点"
+          :prefix-icon="Search"
+          @keyup.enter="searchLocation"
+        />
+        <el-button type="primary" @click="searchLocation" :loading="searchLoading">
+          搜索
+        </el-button>
+      </div>
+      
+      <div class="map-container">
+        <div id="hotelMapContainer"></div>
+      </div>
+      
+      <div v-if="selectedLocation" class="selected-info">
+        <p><strong>选中位置：</strong></p>
+        <p>经度：{{ selectedLocation.lng }}</p>
+        <p>纬度：{{ selectedLocation.lat }}</p>
+        <p v-if="selectedLocation.address">地址：{{ selectedLocation.address }}</p>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleMapClose">取消</el-button>
+          <el-button type="primary" @click="confirmLocation">确认位置</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Plus } from '@element-plus/icons-vue'
+import { ArrowLeft, Plus, Location, Search } from '@element-plus/icons-vue'
 import { addHotel, updateHotel } from '@/api/hotel'
+import AMapLoader from '@amap/amap-jsapi-loader'
 
 const router = useRouter()
 const route = useRoute()
@@ -81,6 +131,15 @@ const isEdit = computed(() => !!route.params.id)
 const loading = ref(false)
 const formRef = ref()
 const fileList = ref([])
+
+// 地图相关变量
+const showMapDialog = ref(false)
+const selectedLocation = ref(null)
+const searchKeyword = ref('')
+const searchLoading = ref(false)
+let hotelMap = null
+let hotelMarker = null
+let hotelGeocoder = null
 
 const form = reactive({
   name: '',
@@ -195,6 +254,158 @@ onMounted(() => {
   // 如果是编辑模式，这里可以加载酒店详情
   // loadHotelDetail()
 })
+
+// 初始化高德地图
+const initHotelMap = async () => {
+  try {
+    const AMap = await AMapLoader.load({
+      key: '02c68a423632305cbfd1b87cb5ded8d6',
+      version: '2.0',
+      plugins: ['AMap.Geocoder', 'AMap.PlaceSearch']
+    })
+    
+    // 创建地图实例
+    hotelMap = new AMap.Map('hotelMapContainer', {
+      zoom: 13,
+      center: [110.299121, 25.274215] // 阳朔县中心坐标
+    })
+    
+    // 创建地理编码实例
+    hotelGeocoder = new AMap.Geocoder({
+      city: '阳朔县'
+    })
+    
+    // 添加地图点击事件
+    hotelMap.on('click', async (e) => {
+      const { lng, lat } = e.lnglat
+      
+      // 清除之前的标记
+      if (hotelMarker) {
+        hotelMap.remove(hotelMarker)
+      }
+      
+      // 添加新标记
+      hotelMarker = new AMap.Marker({
+        position: [lng, lat],
+        map: hotelMap
+      })
+      
+      // 逆地理编码获取地址
+      try {
+        hotelGeocoder.getAddress([lng, lat], (status, result) => {
+          if (status === 'complete' && result.regeocode) {
+            selectedLocation.value = {
+              lng: lng.toFixed(6),
+              lat: lat.toFixed(6),
+              address: result.regeocode.formattedAddress
+            }
+          } else {
+            selectedLocation.value = {
+              lng: lng.toFixed(6),
+              lat: lat.toFixed(6)
+            }
+          }
+        })
+      } catch (error) {
+        selectedLocation.value = {
+          lng: lng.toFixed(6),
+          lat: lat.toFixed(6)
+        }
+      }
+    })
+    
+  } catch (error) {
+    console.error('地图加载失败:', error)
+    ElMessage.error('地图加载失败，请检查网络连接')
+  }
+}
+
+// 搜索地点
+const searchLocation = async () => {
+  if (!searchKeyword.value.trim()) {
+    ElMessage.warning('请输入搜索关键词')
+    return
+  }
+  
+  searchLoading.value = true
+  
+  try {
+    const AMap = await AMapLoader.load({
+      key: '02c68a423632305cbfd1b87cb5ded8d6',
+      version: '2.0',
+      plugins: ['AMap.PlaceSearch']
+    })
+    
+    const placeSearch = new AMap.PlaceSearch({
+      city: '阳朔县',
+      pageSize: 1
+    })
+    
+    placeSearch.search(searchKeyword.value, (status, result) => {
+      if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
+        const poi = result.poiList.pois[0]
+        const location = poi.location
+        
+        // 移动地图中心到搜索结果
+        hotelMap.setCenter([location.lng, location.lat])
+        hotelMap.setZoom(16)
+        
+        // 清除之前的标记
+        if (hotelMarker) {
+          hotelMap.remove(hotelMarker)
+        }
+        
+        // 添加新标记
+        hotelMarker = new AMap.Marker({
+          position: [location.lng, location.lat],
+          map: hotelMap
+        })
+        
+        selectedLocation.value = {
+          lng: location.lng.toFixed(6),
+          lat: location.lat.toFixed(6),
+          address: poi.name + ' ' + poi.address
+        }
+        
+        ElMessage.success('搜索成功')
+      } else {
+        ElMessage.warning('未找到相关地点')
+      }
+    })
+  } catch (error) {
+    console.error('搜索失败:', error)
+    ElMessage.error('搜索失败')
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+// 确认位置选择
+const confirmLocation = () => {
+  if (selectedLocation.value) {
+    form.longitude = selectedLocation.value.lng
+    form.latitude = selectedLocation.value.lat
+    showMapDialog.value = false
+    ElMessage.success('位置选择成功')
+  } else {
+    ElMessage.warning('请先在地图上点击选择位置')
+  }
+}
+
+// 关闭地图对话框
+const handleMapClose = () => {
+  showMapDialog.value = false
+  selectedLocation.value = null
+  searchKeyword.value = ''
+}
+
+// 监听地图对话框打开
+watch(showMapDialog, async (newVal) => {
+  if (newVal) {
+    await nextTick()
+    await initHotelMap()
+  }
+})
 </script>
 
 <style scoped>
@@ -215,5 +426,47 @@ onMounted(() => {
 .upload-demo {
   display: flex;
   flex-wrap: wrap;
+}
+
+.location-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-info {
+  font-size: 12px;
+  color: #666;
+  margin-left: 10px;
+}
+
+.map-container {
+  width: 100%;
+  height: 400px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.map-search {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.selected-info {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#hotelMapContainer {
+  width: 100%;
+  height: 100%;
+}
+
+.dialog-footer {
+  text-align: right;
 }
 </style>

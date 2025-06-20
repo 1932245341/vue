@@ -39,13 +39,30 @@
       </el-row>
 
       <el-row :gutter="20">
+        <el-col :span="24">
+          <el-form-item label="位置选择">
+            <div class="location-selector">
+              <el-button @click="showMapDialog = true" type="primary" plain>
+                <el-icon><Location /></el-icon>
+                在地图上选择位置
+              </el-button>
+              <span v-if="form.latitude && form.longitude" class="location-info">
+                已选择：{{ form.latitude }}, {{ form.longitude }}
+              </span>
+            </div>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="纬度" prop="latitude">
             <el-input
               v-model="form.latitude"
-              placeholder="请输入纬度"
+              placeholder="请输入纬度或在地图上选择"
               type="number"
               step="0.000001"
+              readonly
             />
           </el-form-item>
         </el-col>
@@ -53,9 +70,10 @@
           <el-form-item label="经度" prop="longitude">
             <el-input
               v-model="form.longitude"
-              placeholder="请输入经度"
+              placeholder="请输入经度或在地图上选择"
               type="number"
               step="0.000001"
+              readonly
             />
           </el-form-item>
         </el-col>
@@ -94,12 +112,45 @@
       </div>
     </template>
   </el-dialog>
+  
+  <!-- 地图选择对话框 -->
+  <el-dialog v-model="showMapDialog" title="选择位置" width="800px" :before-close="handleMapClose">
+    <div class="map-container">
+      <div class="map-search">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索地点"
+          @keyup.enter="searchLocation"
+          style="width: 300px; margin-bottom: 10px;"
+        >
+          <template #append>
+            <el-button @click="searchLocation" :loading="searchLoading">
+              <el-icon><Search /></el-icon>
+            </el-button>
+          </template>
+        </el-input>
+      </div>
+      <div id="parkingMapContainer" style="height: 400px; width: 100%;"></div>
+      <div v-if="selectedLocation" class="selected-info">
+        <p><strong>选中位置：</strong></p>
+        <p>经度：{{ selectedLocation.lng }}</p>
+        <p>纬度：{{ selectedLocation.lat }}</p>
+        <p v-if="selectedLocation.address">地址：{{ selectedLocation.address }}</p>
+      </div>
+    </div>
+    <template #footer>
+      <el-button @click="handleMapClose">取消</el-button>
+      <el-button type="primary" @click="confirmLocation" :disabled="!selectedLocation">确认位置</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Location, Search } from '@element-plus/icons-vue'
 import { addParking, updateParking } from '@/api/parking'
+import AMapLoader from '@amap/amap-jsapi-loader'
 
 // Props
 const props = defineProps({
@@ -124,6 +175,15 @@ const emit = defineEmits(['update:visible', 'success'])
 const formRef = ref()
 const submitLoading = ref(false)
 const fileList = ref([])
+
+// 地图相关变量
+const showMapDialog = ref(false)
+const selectedLocation = ref(null)
+const searchKeyword = ref('')
+const searchLoading = ref(false)
+let parkingMap = null
+let parkingMarker = null
+let parkingGeocoder = null
 
 // 上传配置
 const uploadAction = ref('http://localhost:8080/common/file/upload')
@@ -283,10 +343,200 @@ const handleSubmit = async () => {
     submitLoading.value = false
   }
 }
+
+// 初始化高德地图
+const initParkingMap = async () => {
+  try {
+    const AMap = await AMapLoader.load({
+      key: '02c68a423632305cbfd1b87cb5ded8d6',
+      version: '2.0',
+      plugins: ['AMap.Geocoder', 'AMap.PlaceSearch']
+    })
+    
+    // 创建地图实例
+    parkingMap = new AMap.Map('parkingMapContainer', {
+      zoom: 13,
+      center: [110.299121, 25.274215] // 阳朔县中心坐标
+    })
+    
+    // 创建地理编码实例
+    parkingGeocoder = new AMap.Geocoder({
+      city: '阳朔县'
+    })
+    
+    // 添加地图点击事件
+    parkingMap.on('click', async (e) => {
+      const { lng, lat } = e.lnglat
+      
+      // 清除之前的标记
+      if (parkingMarker) {
+        parkingMap.remove(parkingMarker)
+      }
+      
+      // 添加新标记
+      parkingMarker = new AMap.Marker({
+        position: [lng, lat],
+        map: parkingMap
+      })
+      
+      // 逆地理编码获取地址
+      try {
+        parkingGeocoder.getAddress([lng, lat], (status, result) => {
+          if (status === 'complete' && result.regeocode) {
+            selectedLocation.value = {
+              lng: lng.toFixed(6),
+              lat: lat.toFixed(6),
+              address: result.regeocode.formattedAddress
+            }
+          } else {
+            selectedLocation.value = {
+              lng: lng.toFixed(6),
+              lat: lat.toFixed(6)
+            }
+          }
+        })
+      } catch (error) {
+        selectedLocation.value = {
+          lng: lng.toFixed(6),
+          lat: lat.toFixed(6)
+        }
+      }
+    })
+    
+  } catch (error) {
+    console.error('地图加载失败:', error)
+    ElMessage.error('地图加载失败，请检查网络连接')
+  }
+}
+
+// 搜索地点
+const searchLocation = async () => {
+  if (!searchKeyword.value.trim()) {
+    ElMessage.warning('请输入搜索关键词')
+    return
+  }
+  
+  searchLoading.value = true
+  
+  try {
+    const AMap = await AMapLoader.load({
+      key: '02c68a423632305cbfd1b87cb5ded8d6',
+      version: '2.0',
+      plugins: ['AMap.PlaceSearch']
+    })
+    
+    const placeSearch = new AMap.PlaceSearch({
+      city: '阳朔县',
+      pageSize: 1
+    })
+    
+    placeSearch.search(searchKeyword.value, (status, result) => {
+      if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
+        const poi = result.poiList.pois[0]
+        const location = poi.location
+        
+        // 移动地图中心到搜索结果
+        parkingMap.setCenter([location.lng, location.lat])
+        parkingMap.setZoom(16)
+        
+        // 清除之前的标记
+        if (parkingMarker) {
+          parkingMap.remove(parkingMarker)
+        }
+        
+        // 添加新标记
+        parkingMarker = new AMap.Marker({
+          position: [location.lng, location.lat],
+          map: parkingMap
+        })
+        
+        selectedLocation.value = {
+          lng: location.lng.toFixed(6),
+          lat: location.lat.toFixed(6),
+          address: poi.name + ' ' + poi.address
+        }
+        
+        ElMessage.success('搜索成功')
+      } else {
+        ElMessage.warning('未找到相关地点')
+      }
+    })
+  } catch (error) {
+    console.error('搜索失败:', error)
+    ElMessage.error('搜索失败')
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+// 确认位置选择
+const confirmLocation = () => {
+  if (selectedLocation.value) {
+    form.longitude = selectedLocation.value.lng
+    form.latitude = selectedLocation.value.lat
+    showMapDialog.value = false
+    ElMessage.success('位置选择成功')
+  } else {
+    ElMessage.warning('请先在地图上点击选择位置')
+  }
+}
+
+// 关闭地图对话框
+const handleMapClose = () => {
+  showMapDialog.value = false
+  selectedLocation.value = null
+  searchKeyword.value = ''
+}
+
+// 监听地图对话框打开
+watch(showMapDialog, async (newVal) => {
+  if (newVal) {
+    await nextTick()
+    await initParkingMap()
+  }
+})
 </script>
 
 <style scoped>
 .dialog-footer {
   text-align: right;
+}
+
+.location-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-info {
+  font-size: 12px;
+  color: #666;
+  margin-left: 10px;
+}
+
+.map-container {
+  width: 100%;
+  height: 400px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.map-search {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.selected-info {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#parkingMapContainer {
+  width: 100%;
+  height: 100%;
 }
 </style>
