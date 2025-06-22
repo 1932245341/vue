@@ -1,180 +1,172 @@
 <template>
-  <el-dialog
-    :model-value="visible"
-    :title="isEdit ? '编辑停车场' : '添加停车场'"
-    width="700px"
-    @close="handleClose"
-  >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="120px"
-      label-position="left"
-    >
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <el-form-item label="停车场名称" prop="name">
-            <el-input
-              v-model="form.name"
-              placeholder="请输入停车场名称"
-              maxlength="50"
-              show-word-limit
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
+  <div class="parking-form">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <h2>{{ isEdit ? '编辑停车场' : '添加停车场' }}</h2>
+      <p>{{ isEdit ? '修改停车场信息' : '创建新的停车场' }}</p>
+    </div>
 
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <el-form-item label="停车场位置" prop="location">
-            <el-input
-              v-model="form.location"
-              placeholder="请输入停车场位置"
-              maxlength="200"
-              show-word-limit
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
+    <!-- 表单卡片 -->
+    <el-card class="form-card">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="120px"
+        label-position="left"
+      >
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="停车场名称" prop="name">
+              <el-input
+                v-model="form.name"
+                placeholder="请输入停车场名称"
+                maxlength="50"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <el-form-item label="位置选择">
-            <div class="location-selector">
-              <el-button @click="showMapDialog = true" type="primary" plain>
-                <el-icon><Location /></el-icon>
-                在地图上选择位置
-              </el-button>
-              <span v-if="form.latitude && form.longitude" class="location-info">
-                已选择：{{ form.latitude }}, {{ form.longitude }}
-              </span>
-            </div>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="纬度" prop="latitude">
-            <el-input
-              v-model="form.latitude"
-              placeholder="请输入纬度或在地图上选择"
-              type="number"
-              step="0.000001"
-              readonly
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="经度" prop="longitude">
-            <el-input
-              v-model="form.longitude"
-              placeholder="请输入经度或在地图上选择"
-              type="number"
-              step="0.000001"
-              readonly
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="24">
-          <el-form-item label="停车场图片" prop="image">
-            <div class="image-upload-container">
-              <el-upload
-                v-model:file-list="fileList"
-                :action="uploadAction"
-                :headers="uploadHeaders"
-                :on-success="handleUploadSuccess"
-                :on-remove="handleRemove"
-                :before-upload="beforeUpload"
-                list-type="picture-card"
-                :limit="1"
-              >
-                <el-icon><Plus /></el-icon>
-              </el-upload>
-              <div class="upload-tip">
-                支持 jpg、png 格式，单张图片不超过 2MB
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="停车场位置" prop="location">
+              <el-input
+                v-model="form.location"
+                placeholder="请输入停车场位置"
+                maxlength="200"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="位置选择">
+              <div class="location-selector">
+                <el-button @click="showMapDialog = true" type="primary" plain>
+                  <el-icon><Location /></el-icon>
+                  在地图上选择位置
+                </el-button>
+                <span v-if="form.latitude && form.longitude" class="location-info">
+                  已选择：{{ form.latitude }}, {{ form.longitude }}
+                </span>
               </div>
-            </div>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="纬度" prop="latitude">
+              <el-input-number
+                v-model="form.latitude"
+                placeholder="请输入纬度或在地图上选择"
+                :precision="6"
+                style="width: 100%"
+                readonly
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="经度" prop="longitude">
+              <el-input-number
+                v-model="form.longitude"
+                placeholder="请输入经度或在地图上选择"
+                :precision="6"
+                style="width: 100%"
+                readonly
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="停车场图片" prop="image">
+              <div class="image-upload-container">
+                <el-upload
+                  v-model:file-list="fileList"
+                  :action="uploadAction"
+                  :headers="uploadHeaders"
+                  :on-success="handleUploadSuccess"
+                  :on-remove="handleRemove"
+                  :before-upload="beforeUpload"
+                  list-type="picture-card"
+                  :limit="1"
+                >
+                  <el-icon><Plus /></el-icon>
+                </el-upload>
+                <div class="upload-tip">
+                  支持 jpg、png 格式，单张图片不超过 2MB
+                </div>
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
 
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
+      <!-- 操作按钮 -->
+      <div class="form-actions">
+        <el-button @click="handleCancel">取消</el-button>
+        <el-button @click="resetForm">重置</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
           {{ isEdit ? '更新' : '添加' }}
         </el-button>
       </div>
-    </template>
-  </el-dialog>
-  
-  <!-- 地图选择对话框 -->
-  <el-dialog v-model="showMapDialog" title="选择位置" width="800px" :before-close="handleMapClose">
-    <div class="map-container">
-      <div class="map-search">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="搜索地点"
-          @keyup.enter="searchLocation"
-          style="width: 300px; margin-bottom: 10px;"
-        >
-          <template #append>
-            <el-button @click="searchLocation" :loading="searchLoading">
-              <el-icon><Search /></el-icon>
-            </el-button>
-          </template>
-        </el-input>
+    </el-card>
+
+    <!-- 地图选择对话框 -->
+    <el-dialog v-model="showMapDialog" title="选择位置" width="800px" :before-close="handleMapClose">
+      <div class="map-container">
+        <div class="map-search">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索地点"
+            @keyup.enter="searchLocation"
+            style="width: 300px; margin-bottom: 10px;"
+          >
+            <template #append>
+              <el-button @click="searchLocation" :loading="searchLoading">
+                <el-icon><Search /></el-icon>
+              </el-button>
+            </template>
+          </el-input>
+        </div>
+        <div id="parkingMapContainer" style="height: 400px; width: 100%;"></div>
+        <div v-if="selectedLocation" class="selected-info">
+          <p><strong>选中位置：</strong></p>
+          <p>经度：{{ selectedLocation.lng }}</p>
+          <p>纬度：{{ selectedLocation.lat }}</p>
+          <p v-if="selectedLocation.address">地址：{{ selectedLocation.address }}</p>
+        </div>
       </div>
-      <div id="parkingMapContainer" style="height: 400px; width: 100%;"></div>
-      <div v-if="selectedLocation" class="selected-info">
-        <p><strong>选中位置：</strong></p>
-        <p>经度：{{ selectedLocation.lng }}</p>
-        <p>纬度：{{ selectedLocation.lat }}</p>
-        <p v-if="selectedLocation.address">地址：{{ selectedLocation.address }}</p>
-      </div>
-    </div>
-    <template #footer>
-      <el-button @click="handleMapClose">取消</el-button>
-      <el-button type="primary" @click="confirmLocation" :disabled="!selectedLocation">确认位置</el-button>
-    </template>
-  </el-dialog>
+      <template #footer>
+        <el-button @click="handleMapClose">取消</el-button>
+        <el-button type="primary" @click="confirmLocation" :disabled="!selectedLocation">确认位置</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive, watch, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Location, Search } from '@element-plus/icons-vue'
-import { addParking, updateParking } from '@/api/parking'
+import { Location, Search, Plus } from '@element-plus/icons-vue'
+import { useRouter, useRoute } from 'vue-router'
+import { addParking, updateParking, getParkingById } from '@/api/parking'
 import AMapLoader from '@amap/amap-jsapi-loader'
 
-// Props
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false
-  },
-  formData: {
-    type: Object,
-    default: () => ({})
-  },
-  isEdit: {
-    type: Boolean,
-    default: false
-  }
-})
-
-// Emits
-const emit = defineEmits(['update:visible', 'success'])
+// 路由
+const router = useRouter()
+const route = useRoute()
 
 // 响应式数据
 const formRef = ref()
 const submitLoading = ref(false)
 const fileList = ref([])
+const isEdit = ref(false)
 
 // 地图相关变量
 const showMapDialog = ref(false)
@@ -196,8 +188,8 @@ const form = reactive({
   id: null,
   name: '',
   location: '',
-  latitude: '',
-  longitude: '',
+  latitude: null,
+  longitude: null,
   image: ''
 })
 
@@ -212,50 +204,58 @@ const rules = {
     { max: 200, message: '位置长度不能超过200个字符', trigger: 'blur' }
   ],
   latitude: [
-    { required: true, message: '请输入纬度', trigger: 'blur' }
+    { required: true, message: '请输入纬度', trigger: 'blur' },
+    { type: 'number', message: '纬度必须为数字', trigger: 'blur' }
   ],
   longitude: [
-    { required: true, message: '请输入经度', trigger: 'blur' }
+    { required: true, message: '请输入经度', trigger: 'blur' },
+    { type: 'number', message: '经度必须为数字', trigger: 'blur' }
   ]
 }
 
-// 监听表单数据变化
-watch(
-  () => props.formData,
-  (newData) => {
-    if (newData && Object.keys(newData).length > 0) {
+// 初始化页面
+const initPage = async () => {
+  const id = route.params.id
+  if (id) {
+    isEdit.value = true
+    await loadParkingData(id)
+  }
+}
+
+// 加载停车场数据
+const loadParkingData = async (id) => {
+  try {
+    const response = await getParkingById(id)
+    if (response.code === 1) {
+      const data = response.data
       Object.assign(form, {
-        id: newData.id || null,
-        name: newData.name || '',
-        location: newData.location || '',
-        latitude: newData.latitude || '',
-        longitude: newData.longitude || '',
-        image: newData.image || ''
+        id: data.id,
+        name: data.name || '',
+        location: data.location || '',
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
+        image: data.image || ''
       })
       
       // 处理图片
-      if (newData.image) {
+      if (data.image) {
         fileList.value = [{
           uid: 1,
           name: 'image',
           status: 'done',
-          url: newData.image
+          url: data.image
         }]
       }
+    } else {
+      ElMessage.error(response.msg || '获取停车场信息失败')
+      router.push('/parking/list')
     }
-  },
-  { immediate: true, deep: true }
-)
-
-// 监听对话框显示状态
-watch(
-  () => props.visible,
-  (visible) => {
-    if (!visible) {
-      resetForm()
-    }
+  } catch (error) {
+    console.error('获取停车场信息失败:', error)
+    ElMessage.error('获取停车场信息失败')
+    router.push('/parking/list')
   }
-)
+}
 
 // 重置表单
 const resetForm = () => {
@@ -266,11 +266,16 @@ const resetForm = () => {
     id: null,
     name: '',
     location: '',
-    latitude: '',
-    longitude: '',
+    latitude: null,
+    longitude: null,
     image: ''
   })
   fileList.value = []
+}
+
+// 取消操作
+const handleCancel = () => {
+  router.push('/parking/list')
 }
 
 // 上传前检查
@@ -298,13 +303,8 @@ const handleUploadSuccess = (response, file) => {
 }
 
 // 移除图片
-const handleRemove = (file) => {
+const handleRemove = () => {
   form.image = ''
-}
-
-// 关闭对话框
-const handleClose = () => {
-  emit('update:visible', false)
 }
 
 // 提交表单
@@ -313,60 +313,58 @@ const handleSubmit = async () => {
   
   try {
     await formRef.value.validate()
-    
     submitLoading.value = true
     
     const submitData = {
-      ...form,
-      latitude: form.latitude ? parseFloat(form.latitude) : null,
-      longitude: form.longitude ? parseFloat(form.longitude) : null
+      name: form.name,
+      location: form.location,
+      latitude: form.latitude,
+      longitude: form.longitude,
+      image: form.image
     }
     
     let response
-    if (props.isEdit) {
+    if (isEdit.value) {
+      submitData.id = form.id
       response = await updateParking(submitData)
     } else {
-      const { id, ...addData } = submitData
-      response = await addParking(addData)
+      response = await addParking(submitData)
     }
     
     if (response.code === 1) {
-      ElMessage.success(props.isEdit ? '更新成功' : '添加成功')
-      emit('success')
+      ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
+      router.push('/parking/list')
     } else {
-      ElMessage.error(response.msg || (props.isEdit ? '更新失败' : '添加失败'))
+      ElMessage.error(response.msg || (isEdit.value ? '更新失败' : '添加失败'))
     }
   } catch (error) {
-    console.error('提交表单失败:', error)
-    ElMessage.error(props.isEdit ? '更新失败' : '添加失败')
+    console.error('提交失败:', error)
+    ElMessage.error('提交失败，请检查网络连接')
   } finally {
     submitLoading.value = false
   }
 }
 
-// 初始化高德地图
-const initParkingMap = async () => {
+// 初始化地图
+const initMap = async () => {
   try {
     const AMap = await AMapLoader.load({
-      key: '02c68a423632305cbfd1b87cb5ded8d6',
-      version: '2.0',
-      plugins: ['AMap.Geocoder', 'AMap.PlaceSearch']
-    })
+        key: '02c68a423632305cbfd1b87cb5ded8d6',
+        version: '2.0',
+        plugins: ['AMap.Geocoder', 'AMap.PlaceSearch']
+      })
     
-    // 创建地图实例
     parkingMap = new AMap.Map('parkingMapContainer', {
       zoom: 13,
-      center: [110.299121, 25.274215] // 阳朔县中心坐标
+      center: [116.397428, 39.90923]
     })
     
-    // 创建地理编码实例
-    parkingGeocoder = new AMap.Geocoder({
-      city: '阳朔县'
-    })
+    parkingGeocoder = new AMap.Geocoder()
     
-    // 添加地图点击事件
-    parkingMap.on('click', async (e) => {
+    // 地图点击事件
+    parkingMap.on('click', (e) => {
       const { lng, lat } = e.lnglat
+      selectedLocation.value = { lng, lat }
       
       // 清除之前的标记
       if (parkingMarker) {
@@ -380,36 +378,19 @@ const initParkingMap = async () => {
       })
       
       // 逆地理编码获取地址
-      try {
-        parkingGeocoder.getAddress([lng, lat], (status, result) => {
-          if (status === 'complete' && result.regeocode) {
-            selectedLocation.value = {
-              lng: lng.toFixed(6),
-              lat: lat.toFixed(6),
-              address: result.regeocode.formattedAddress
-            }
-          } else {
-            selectedLocation.value = {
-              lng: lng.toFixed(6),
-              lat: lat.toFixed(6)
-            }
-          }
-        })
-      } catch (error) {
-        selectedLocation.value = {
-          lng: lng.toFixed(6),
-          lat: lat.toFixed(6)
+      parkingGeocoder.getAddress([lng, lat], (status, result) => {
+        if (status === 'complete' && result.regeocode) {
+          selectedLocation.value.address = result.regeocode.formattedAddress
         }
-      }
+      })
     })
-    
   } catch (error) {
-    console.error('地图加载失败:', error)
-    ElMessage.error('地图加载失败，请检查网络连接')
+    console.error('地图初始化失败:', error)
+    ElMessage.error('地图初始化失败')
   }
 }
 
-// 搜索地点
+// 搜索位置
 const searchLocation = async () => {
   if (!searchKeyword.value.trim()) {
     ElMessage.warning('请输入搜索关键词')
@@ -417,7 +398,6 @@ const searchLocation = async () => {
   }
   
   searchLoading.value = true
-  
   try {
     const AMap = await AMapLoader.load({
       key: '02c68a423632305cbfd1b87cb5ded8d6',
@@ -426,18 +406,20 @@ const searchLocation = async () => {
     })
     
     const placeSearch = new AMap.PlaceSearch({
-      city: '阳朔县',
-      pageSize: 1
+      pageSize: 1,
+      pageIndex: 1
     })
     
     placeSearch.search(searchKeyword.value, (status, result) => {
-      if (status === 'complete' && result.poiList && result.poiList.pois.length > 0) {
+      if (status === 'complete' && result.poiList.pois.length > 0) {
         const poi = result.poiList.pois[0]
-        const location = poi.location
+        const { lng, lat } = poi.location
         
-        // 移动地图中心到搜索结果
-        parkingMap.setCenter([location.lng, location.lat])
-        parkingMap.setZoom(16)
+        selectedLocation.value = {
+          lng,
+          lat,
+          address: poi.name + ' ' + poi.address
+        }
         
         // 清除之前的标记
         if (parkingMarker) {
@@ -446,38 +428,31 @@ const searchLocation = async () => {
         
         // 添加新标记
         parkingMarker = new AMap.Marker({
-          position: [location.lng, location.lat],
+          position: [lng, lat],
           map: parkingMap
         })
         
-        selectedLocation.value = {
-          lng: location.lng.toFixed(6),
-          lat: location.lat.toFixed(6),
-          address: poi.name + ' ' + poi.address
-        }
-        
-        ElMessage.success('搜索成功')
+        // 移动地图中心
+        parkingMap.setCenter([lng, lat])
       } else {
-        ElMessage.warning('未找到相关地点')
+        ElMessage.warning('未找到相关位置')
       }
+      searchLoading.value = false
     })
   } catch (error) {
     console.error('搜索失败:', error)
     ElMessage.error('搜索失败')
-  } finally {
     searchLoading.value = false
   }
 }
 
-// 确认位置选择
+// 确认位置
 const confirmLocation = () => {
   if (selectedLocation.value) {
-    form.longitude = selectedLocation.value.lng
-    form.latitude = selectedLocation.value.lat
+    form.latitude = parseFloat(selectedLocation.value.lat)
+    form.longitude = parseFloat(selectedLocation.value.lng)
     showMapDialog.value = false
     ElMessage.success('位置选择成功')
-  } else {
-    ElMessage.warning('请先在地图上点击选择位置')
   }
 }
 
@@ -485,21 +460,54 @@ const confirmLocation = () => {
 const handleMapClose = () => {
   showMapDialog.value = false
   selectedLocation.value = null
-  searchKeyword.value = ''
+  if (parkingMarker) {
+    parkingMap.remove(parkingMarker)
+    parkingMarker = null
+  }
 }
 
-// 监听地图对话框打开
-watch(showMapDialog, async (newVal) => {
-  if (newVal) {
-    await nextTick()
-    await initParkingMap()
+// 监听地图对话框显示
+const watchMapDialog = () => {
+  if (showMapDialog.value) {
+    nextTick(() => {
+      initMap()
+    })
   }
+}
+
+// 页面挂载
+onMounted(() => {
+  initPage()
 })
+
+// 监听地图对话框
+watch(() => showMapDialog.value, watchMapDialog)
 </script>
 
 <style scoped>
-.dialog-footer {
-  text-align: right;
+.parking-form {
+  padding: 20px;
+}
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-header h2 {
+  margin: 0 0 8px 0;
+  color: #303133;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.page-header p {
+  margin: 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.form-card {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .location-selector {
@@ -509,22 +517,38 @@ watch(showMapDialog, async (newVal) => {
 }
 
 .location-info {
+  color: #67c23a;
+  font-size: 14px;
+}
+
+.image-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upload-tip {
+  color: #909399;
   font-size: 12px;
-  color: #666;
-  margin-left: 10px;
+}
+
+.form-actions {
+  margin-top: 30px;
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+.form-actions .el-button {
+  margin: 0 10px;
 }
 
 .map-container {
-  width: 100%;
-  height: 400px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
+  position: relative;
 }
 
 .map-search {
   margin-bottom: 10px;
-  display: flex;
-  gap: 10px;
 }
 
 .selected-info {
@@ -532,11 +556,10 @@ watch(showMapDialog, async (newVal) => {
   padding: 10px;
   background-color: #f5f7fa;
   border-radius: 4px;
-  font-size: 14px;
 }
 
-#parkingMapContainer {
-  width: 100%;
-  height: 100%;
+.selected-info p {
+  margin: 5px 0;
+  font-size: 14px;
 }
 </style>

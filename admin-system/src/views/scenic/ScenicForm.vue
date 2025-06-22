@@ -76,10 +76,11 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="纬度" prop="latitude">
-              <el-input
+              <el-input-number
                 v-model="formData.latitude"
                 placeholder="请输入纬度或在地图上选择"
-                maxlength="20"
+                :precision="6"
+                style="width: 100%"
                 readonly
               />
             </el-form-item>
@@ -87,10 +88,11 @@
           
           <el-col :span="12">
             <el-form-item label="经度" prop="longitude">
-              <el-input
+              <el-input-number
                 v-model="formData.longitude"
                 placeholder="请输入经度或在地图上选择"
-                maxlength="20"
+                :precision="6"
+                style="width: 100%"
                 readonly
               />
             </el-form-item>
@@ -220,8 +222,8 @@ const formData = reactive({
   name: '',
   location: '',
   time: '',
-  latitude: '',
-  longitude: '',
+  latitude: null,
+  longitude: null,
   contact: '',
   label: '',
   image: ''
@@ -241,10 +243,12 @@ const formRules = {
     { required: true, message: '请输入开放时间', trigger: 'blur' }
   ],
   latitude: [
-    { required: true, message: '请输入纬度', trigger: 'blur' }
+    { required: true, message: '请输入纬度', trigger: 'blur' },
+    { type: 'number', message: '纬度必须为数字', trigger: 'blur' }
   ],
   longitude: [
-    { required: true, message: '请输入经度', trigger: 'blur' }
+    { required: true, message: '请输入经度', trigger: 'blur' },
+    { type: 'number', message: '经度必须为数字', trigger: 'blur' }
   ],
   contact: [
     { required: true, message: '请输入联系人', trigger: 'blur' }
@@ -487,8 +491,8 @@ const searchLocation = async () => {
 // 确认位置选择
 const confirmLocation = () => {
   if (selectedLocation.value) {
-    formData.longitude = selectedLocation.value.lng
-    formData.latitude = selectedLocation.value.lat
+    formData.longitude = parseFloat(selectedLocation.value.lng)
+    formData.latitude = parseFloat(selectedLocation.value.lat)
     showMapDialog.value = false
     ElMessage.success('位置选择成功')
   } else {

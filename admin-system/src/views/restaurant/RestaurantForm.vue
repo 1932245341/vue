@@ -408,8 +408,8 @@ const searchLocation = async () => {
 // 确认位置选择
 const confirmLocation = () => {
   if (selectedLocation.value) {
-    form.longitude = selectedLocation.value.lng
-    form.latitude = selectedLocation.value.lat
+    form.longitude = parseFloat(selectedLocation.value.lng)
+    form.latitude = parseFloat(selectedLocation.value.lat)
     showMapDialog.value = false
     ElMessage.success('位置选择成功')
   } else {

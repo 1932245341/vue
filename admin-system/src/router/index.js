@@ -12,6 +12,7 @@ const ScenicList = () => import('@/views/scenic/ScenicList.vue')
 const ScenicForm = () => import('@/views/scenic/ScenicForm.vue')
 const SpecialtyList = () => import('@/views/specialty/SpecialtyList.vue')
 const ParkingList = () => import('@/views/parking/ParkingList.vue')
+const ParkingForm = () => import('@/views/parking/ParkingForm.vue')
 const TicketList = () => import('@/views/ticket/TicketList.vue')
 const TicketForm = () => import('@/views/ticket/TicketForm.vue')
 const RestaurantList = () => import('@/views/restaurant/RestaurantList.vue')
@@ -277,6 +278,18 @@ const routes = [
         name: 'ParkingList',
         component: ParkingList,
         meta: { title: '停车场列表', icon: 'List' }
+      },
+      {
+        path: 'add',
+        name: 'ParkingAdd',
+        component: ParkingForm,
+        meta: { title: '添加停车场', icon: 'Plus' }
+      },
+      {
+        path: 'edit/:id',
+        name: 'ParkingEdit',
+        component: ParkingForm,
+        meta: { title: '编辑停车场', icon: 'Edit' }
       }
     ]
   },

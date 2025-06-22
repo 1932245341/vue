@@ -34,3 +34,11 @@ export const updateParking = (data) => {
     data
   })
 }
+
+// 根据ID获取停车场详情
+export const getParkingById = (id) => {
+  return request({
+    url: `/admin/parking/${id}`,
+    method: 'get'
+  })
+}

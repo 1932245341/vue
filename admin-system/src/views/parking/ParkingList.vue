@@ -93,13 +93,7 @@
       </div>
     </el-card>
 
-    <!-- 添加/编辑对话框 -->
-    <ParkingForm
-      v-model:visible="formVisible"
-      :form-data="currentRow"
-      :is-edit="isEdit"
-      @success="handleFormSuccess"
-    />
+
 
     <!-- 详情对话框 -->
     <ParkingDetail
@@ -113,16 +107,15 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Plus, Edit, View } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 import { getParkingList } from '@/api/parking'
-import ParkingForm from './ParkingForm.vue'
 import ParkingDetail from './ParkingDetail.vue'
 
 // 响应式数据
+const router = useRouter()
 const loading = ref(false)
 const tableData = ref([])
-const formVisible = ref(false)
 const detailVisible = ref(false)
-const isEdit = ref(false)
 const currentRow = ref({})
 
 // 搜索表单
@@ -185,16 +178,12 @@ const handleReset = () => {
 
 // 添加
 const handleAdd = () => {
-  currentRow.value = {}
-  isEdit.value = false
-  formVisible.value = true
+  router.push('/parking/add')
 }
 
 // 编辑
 const handleEdit = (row) => {
-  currentRow.value = { ...row }
-  isEdit.value = true
-  formVisible.value = true
+  router.push(`/parking/edit/${row.id}`)
 }
 
 // 查看详情
@@ -216,11 +205,7 @@ const handleCurrentChange = (page) => {
   getList()
 }
 
-// 表单提交成功
-const handleFormSuccess = () => {
-  formVisible.value = false
-  getList()
-}
+
 
 // 页面加载时获取数据
 onMounted(() => {

@@ -37,12 +37,24 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="纬度" prop="latitude">
-              <el-input v-model="form.latitude" placeholder="请输入纬度" readonly />
+              <el-input-number
+                v-model="form.latitude"
+                placeholder="请输入纬度"
+                :precision="6"
+                style="width: 100%"
+                readonly
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="经度" prop="longitude">
-              <el-input v-model="form.longitude" placeholder="请输入经度" readonly />
+              <el-input-number
+                v-model="form.longitude"
+                placeholder="请输入经度"
+                :precision="6"
+                style="width: 100%"
+                readonly
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -144,8 +156,8 @@ let hotelGeocoder = null
 const form = reactive({
   name: '',
   location: '',
-  latitude: '',
-  longitude: '',
+  latitude: null,
+  longitude: null,
   image: ''
 })
 
@@ -160,10 +172,12 @@ const rules = {
     { max: 200, message: '位置长度不能超过 200 个字符', trigger: 'blur' }
   ],
   latitude: [
-    { required: true, message: '请输入纬度', trigger: 'blur' }
+    { required: true, message: '请输入纬度', trigger: 'blur' },
+    { type: 'number', message: '纬度必须为数字', trigger: 'blur' }
   ],
   longitude: [
-    { required: true, message: '请输入经度', trigger: 'blur' }
+    { required: true, message: '请输入经度', trigger: 'blur' },
+    { type: 'number', message: '经度必须为数字', trigger: 'blur' }
   ]
 }
 
@@ -383,8 +397,8 @@ const searchLocation = async () => {
 // 确认位置选择
 const confirmLocation = () => {
   if (selectedLocation.value) {
-    form.longitude = selectedLocation.value.lng
-    form.latitude = selectedLocation.value.lat
+    form.longitude = parseFloat(selectedLocation.value.lng)
+    form.latitude = parseFloat(selectedLocation.value.lat)
     showMapDialog.value = false
     ElMessage.success('位置选择成功')
   } else {
