@@ -29,7 +29,7 @@
               位置选择
             </el-button>
             <span v-if="form.longitude && form.latitude" class="location-info">
-              经度: {{ form.longitude }}, 纬度: {{ form.latitude }}
+              经度: {{ form.longitude }}, 纬度:{{ form.latitude }}
             </span>
           </div>
         </el-form-item>
